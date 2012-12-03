@@ -1,0 +1,8 @@
+.. -*-restructuredtext-*-
+
+============
+ifconfigpy
+============
+
+ifconfigpy is a python library to manipulate network interfaces
+just like ifconfig UNIX cli tool.
