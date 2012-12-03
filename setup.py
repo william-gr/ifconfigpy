@@ -32,10 +32,11 @@ setup(
     platforms='any',
     install_requires=[],
     classifiers=[
+        'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
-        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: BSD License'
+        'Operating System :: POSIX :: BSD :: FreeBSD',
         'Programming Language :: Python',
-        'Operating System :: OS Independent',
     ],
     cmdclass={'build_py': build_py},
 )
