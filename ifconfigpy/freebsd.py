@@ -174,6 +174,37 @@ class FBSDInterfaces:
 
 class FBSDInterface:
 
+    def _addr4_to_sockaddr(self, addr):
+        ip = sockaddr_in()
+        ip.sin_family = socket.AF_INET
+        ip.sin_len = ctypes.sizeof(sockaddr_in)
+        ip.sin_addr.s_addr = LIBC.inet_addr(addr)
+        sockaddr = struct_sockaddr.from_address(
+             ctypes.addressof(ip)
+        )
+        """
+        We must return ip as well
+        Otherwise python GC will free ip memory region and
+        sockaddr will not point to anywhere sane
+        """
+        return ip, sockaddr
+
+
+    def _addr6_to_sockaddr(self, addr):
+        ip = sockaddr_in6()
+        ip.sin6_family = socket.AF_INET6
+        ip.sin6_len = ctypes.sizeof(sockaddr_in6)
+        ip.sin6_addr.s_addr = LIBC.inet_addr(addr)
+        sockaddr = struct_sockaddr.from_address(
+             ctypes.addressof(ip)
+        )
+        """
+        We must return ip as well
+        Otherwise python GC will free ip memory region and
+        sockaddr will not point to anywhere sane
+        """
+        return ip, sockaddr
+
     def save(self):
         for inet in list(self._removed):
 
@@ -184,14 +215,7 @@ class FBSDInterface:
                 ifreq = struct_ifreq()
                 ifreq.ifr_name = self.name
 
-                ip = sockaddr_in()
-                ip.sin_family = socket.AF_INET
-                ip.sin_len = ctypes.sizeof(sockaddr_in)
-                ip.sin_addr.s_addr = LIBC.inet_addr(inet.addr)
-
-                ifreq.ifr_ifru.ifru_addr = struct_sockaddr.from_address(
-                    ctypes.addressof(ip)
-                )
+                ip, ifreq.ifr_ifru.ifru_addr = self._addr4_to_sockaddr(inet.addr)
 
                 rv = LIBC.ioctl(
                     s.fileno(),
@@ -226,23 +250,8 @@ class FBSDInterface:
                 ifaliasreq = struct_ifaliasreq()
                 ifaliasreq.ifra_name = self.name
 
-                ip = sockaddr_in()
-                ip.sin_family = socket.AF_INET
-                ip.sin_len = ctypes.sizeof(sockaddr_in)
-                ip.sin_addr.s_addr = LIBC.inet_addr(inet.addr)
-
-                netmask = sockaddr_in()
-                netmask.sin_family = socket.AF_INET
-                netmask.sin_len = ctypes.sizeof(sockaddr_in)
-                netmask.sin_addr.s_addr = LIBC.inet_addr(inet.netmask)
-
-                ifaliasreq.ifra_addr = struct_sockaddr.from_address(
-                    ctypes.addressof(ip)
-                )
-
-                ifaliasreq.ifra_mask = struct_sockaddr.from_address(
-                    ctypes.addressof(netmask)
-                )
+                ip, ifaliasreq.ifra_addr = self._addr4_to_sockaddr(inet.addr)
+                ip, ifaliasreq.ifra_mask = self._addr4_to_sockaddr(inet.netmask)
 
                 rv = LIBC.ioctl(
                     s.fileno(),
