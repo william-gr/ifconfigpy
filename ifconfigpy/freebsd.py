@@ -162,7 +162,7 @@ class FBSDInterface:
 
     def save(self):
         for inet in self:
-            if inet._modified:
+            if not inet._modified:
                 continue
 
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
