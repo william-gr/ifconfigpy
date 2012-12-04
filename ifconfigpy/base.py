@@ -1,30 +1,3 @@
-class BaseInterfaces(object):
-
-    def __repr__(self):
-        return '<Interfaces(%s)>' % type(self).__name__
-
-    def get_interfaces(self):
-        return NotImplementedError
-
-
-class Interface(object):
-
-    def __init__(self, name, **kwargs):
-        self.name = name
-        self.addresses = []
-
-    def __repr__(self):
-        return '<Interface(%s)>' % self.name
-
-    def __iter__(self):
-        for addr in list(self.addresses):
-            yield addr
-
-    def append(self, addr):
-        addr.interface = self
-        self.addresses.append(addr)
-
-
 class InetBase(object):
 
     def __init__(self, addr, network):
@@ -44,8 +17,17 @@ class InetBase(object):
         return self._addr
 
     @addr.setter
-    def addr(self, value):
+    def addr_s(self, value):
         self._addr = value
+        self._modified = True
+
+    @property
+    def network(self):
+        return self._network
+
+    @network.setter
+    def network_s(self, value):
+        self._network = value
         self._modified = True
 
 
