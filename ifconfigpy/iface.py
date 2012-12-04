@@ -52,18 +52,28 @@ class Interface(object):
 
     def __init__(self, name, **kwargs):
         self.name = name
-        self.addresses = []
+        self._inets = []
+        self._removed = []
 
     def __repr__(self):
         return '<Interface(%s)>' % self.name
 
     def __iter__(self):
-        for addr in list(self.addresses):
-            yield addr
+        for inet in list(self._inets):
+            yield inet
 
-    def append(self, addr):
-        addr.interface = self
-        self.addresses.append(addr)
+    def append(self, inet):
+        inet.interface = self
+        self._inets.append(inet)
+
+    def remove(self, inet):
+        self._inets.remove(inet)
+        self._removed.append(inet)
+
+    def find_byaddress(self, addr):
+        for inet in self:
+            if inet.addr == addr:
+                return inet
 
     def save(self):
         raise NotImplementedError

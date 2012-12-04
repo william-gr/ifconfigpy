@@ -6,6 +6,7 @@ class InetBase(object):
     def __init__(self, addr, netmask, new=True):
         self.addr = addr
         self.netmask = netmask
+        self.interface = None
         self._modified = new
 
     def __repr__(self):

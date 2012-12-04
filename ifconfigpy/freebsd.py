@@ -106,6 +106,20 @@ class struct_ifaliasreq(ctypes.Structure):
     ]
 
 
+class union_ifru(ctypes.Union):
+    _fields_ = [
+        ("ifru_addr", struct_sockaddr),
+        # FIXME: there are more items
+    ]
+
+
+class struct_ifreq(ctypes.Structure):
+    _fields_ = [
+        ("ifr_name", ctypes.c_char * IFNAMSIZ),
+        ("ifr_ifru", union_ifru),
+    ]
+
+
 class FBSDInterfaces:
 
     def get_interfaces(self):
@@ -161,24 +175,29 @@ class FBSDInterfaces:
 class FBSDInterface:
 
     def save(self):
-        for inet in self:
-            if not inet._modified:
-                continue
+        for inet in list(self._removed):
 
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
-            ifaliasreq = struct_ifaliasreq()
-            ifaliasreq.ifra_name = self.name
+            rv = 0
 
             if isinstance(inet, Inet):
+                ifreq = struct_ifreq()
+                ifreq.ifr_name = self.name
+
                 ip = sockaddr_in()
                 ip.sin_family = socket.AF_INET
                 ip.sin_len = ctypes.sizeof(sockaddr_in)
                 ip.sin_addr.s_addr = LIBC.inet_addr(inet.addr)
 
-                netmask = sockaddr_in()
-                netmask.sin_family = socket.AF_INET
-                netmask.sin_len = ctypes.sizeof(sockaddr_in)
-                netmask.sin_addr.s_addr = LIBC.inet_addr(inet.netmask)
+                ifreq.ifr_ifru.ifru_addr = struct_sockaddr.from_address(
+                    ctypes.addressof(ip)
+                )
+
+                rv = LIBC.ioctl(
+                    s.fileno(),
+                    _IOW('i', 25, struct_ifreq),  # SIOCDIFADDR
+                    ctypes.byref(ifreq)
+                )
 
             elif isinstance(inet, Inet6):
                 ip = sockaddr_in6()
@@ -191,19 +210,59 @@ class FBSDInterface:
                 netmask.sin6_len = ctypes.sizeof(sockaddr_in6)
                 netmask.sin6_addr.s_addr = LIBC.inet_addr(inet.netmask)
 
-            ifaliasreq.ifra_addr = struct_sockaddr.from_address(
-                ctypes.addressof(ip)
-            )
-
-            ifaliasreq.ifra_mask = struct_sockaddr.from_address(
-                ctypes.addressof(netmask)
-            )
-
-            rv = LIBC.ioctl(
-                s.fileno(),
-                _IOW('i', 43, struct_ifaliasreq),  # SIOCAIFADDR
-                ctypes.byref(ifaliasreq)
-            )
             s.close()
             if rv != 0:
                 raise ValueError("errno %d" % ctypes.get_errno())
+
+        for inet in self:
+            if not inet._modified:
+                continue
+
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+            rv = 0
+
+            if isinstance(inet, Inet):
+
+                ifaliasreq = struct_ifaliasreq()
+                ifaliasreq.ifra_name = self.name
+
+                ip = sockaddr_in()
+                ip.sin_family = socket.AF_INET
+                ip.sin_len = ctypes.sizeof(sockaddr_in)
+                ip.sin_addr.s_addr = LIBC.inet_addr(inet.addr)
+
+                netmask = sockaddr_in()
+                netmask.sin_family = socket.AF_INET
+                netmask.sin_len = ctypes.sizeof(sockaddr_in)
+                netmask.sin_addr.s_addr = LIBC.inet_addr(inet.netmask)
+
+                ifaliasreq.ifra_addr = struct_sockaddr.from_address(
+                    ctypes.addressof(ip)
+                )
+
+                ifaliasreq.ifra_mask = struct_sockaddr.from_address(
+                    ctypes.addressof(netmask)
+                )
+
+                rv = LIBC.ioctl(
+                    s.fileno(),
+                    _IOW('i', 43, struct_ifaliasreq),  # SIOCAIFADDR
+                    ctypes.byref(ifaliasreq)
+                )
+
+            elif isinstance(inet, Inet6):
+                ip = sockaddr_in6()
+                ip.sin6_family = socket.AF_INET6
+                ip.sin6_len = ctypes.sizeof(sockaddr_in6)
+                ip.sin6_addr.s_addr = LIBC.inet_addr(inet.addr)
+
+                netmask = sockaddr_in6()
+                netmask.sin6_family = socket.AF_INET6
+                netmask.sin6_len = ctypes.sizeof(sockaddr_in6)
+                netmask.sin6_addr.s_addr = LIBC.inet_addr(inet.netmask)
+
+            s.close()
+            if rv != 0:
+                raise ValueError("errno %d" % ctypes.get_errno())
+
+            inet._modified = False
