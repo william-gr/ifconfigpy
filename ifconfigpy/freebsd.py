@@ -131,8 +131,8 @@ class FBSDInterfaces:
                 addr = sockaddr_in.from_address(
                     ctypes.addressof(ifa.contents.ifa_netmask.contents)
                 )
-                ipv4network = socket.inet_ntop(family, addr.sin_addr)
-                iface.append(Inet(ipv4addr, ipv4network))
+                ipv4netmask = socket.inet_ntop(family, addr.sin_addr)
+                iface.append(Inet(ipv4addr, ipv4netmask, new=False))
             elif family == socket.AF_INET6:
                 addr = sockaddr_in6.from_address(
                     ctypes.addressof(ifa.contents.ifa_addr.contents)
@@ -141,8 +141,8 @@ class FBSDInterfaces:
                 addr = sockaddr_in6.from_address(
                     ctypes.addressof(ifa.contents.ifa_netmask.contents)
                 )
-                ipv6network = socket.inet_ntop(family, addr.sin6_addr)
-                iface.append(Inet6(ipv6addr, ipv6network))
+                ipv6netmask = socket.inet_ntop(family, addr.sin6_addr)
+                iface.append(Inet6(ipv6addr, ipv6netmask, new=False))
             # AF_LINK
             elif family == 18:
                 pass
@@ -175,10 +175,10 @@ class FBSDInterface:
                 ip.sin_len = ctypes.sizeof(sockaddr_in)
                 ip.sin_addr.s_addr = LIBC.inet_addr(inet.addr)
 
-                network = sockaddr_in()
-                network.sin_family = socket.AF_INET
-                network.sin_len = ctypes.sizeof(sockaddr_in)
-                network.sin_addr.s_addr = LIBC.inet_addr(inet.network)
+                netmask = sockaddr_in()
+                netmask.sin_family = socket.AF_INET
+                netmask.sin_len = ctypes.sizeof(sockaddr_in)
+                netmask.sin_addr.s_addr = LIBC.inet_addr(inet.netmask)
 
             elif isinstance(inet, Inet6):
                 ip = sockaddr_in6()
@@ -186,17 +186,17 @@ class FBSDInterface:
                 ip.sin6_len = ctypes.sizeof(sockaddr_in6)
                 ip.sin6_addr.s_addr = LIBC.inet_addr(inet.addr)
 
-                network = sockaddr_in6()
-                network.sin6_family = socket.AF_INET6
-                network.sin6_len = ctypes.sizeof(sockaddr_in6)
-                network.sin6_addr.s_addr = LIBC.inet_addr(inet.network)
+                netmask = sockaddr_in6()
+                netmask.sin6_family = socket.AF_INET6
+                netmask.sin6_len = ctypes.sizeof(sockaddr_in6)
+                netmask.sin6_addr.s_addr = LIBC.inet_addr(inet.netmask)
 
             ifaliasreq.ifra_addr = struct_sockaddr.from_address(
                 ctypes.addressof(ip)
             )
 
             ifaliasreq.ifra_mask = struct_sockaddr.from_address(
-                ctypes.addressof(network)
+                ctypes.addressof(netmask)
             )
 
             rv = LIBC.ioctl(
