@@ -43,7 +43,7 @@
 
 static PyObject* get_interfaces(PyObject* self) {
 
-    PyObject *interfaces, *interface, *key, *entry;
+    PyObject *interfaces, *interface, *key, *entry, *ips;
     struct ifaddrs *ifap, *ifa;
     struct sockaddr_in *inet;
     char output[200], *dst, address[INET_ADDRSTRLEN], address6[INET6_ADDRSTRLEN];
@@ -59,9 +59,12 @@ static PyObject* get_interfaces(PyObject* self) {
         key = PyString_FromString(ifa->ifa_name);
         if(PyDict_Contains(interfaces, key)) {
             interface = PyDict_GetItem(interfaces, key);
+	    ips = PyDict_GetItem(interface, PyString_FromString("ips"));
         } else {
-            interface = PyList_New(0);
+            interface = PyDict_New();
             PyDict_SetItem(interfaces, key, interface);
+            ips = PyList_New(0);
+            PyDict_SetItem(interface, PyString_FromString("ips"), ips);
         }
 
         inet = (struct sockaddr_in *) ifa->ifa_addr;
@@ -73,7 +76,7 @@ static PyObject* get_interfaces(PyObject* self) {
             inet = (struct sockaddr_in *) ifa->ifa_netmask;
             inet_ntop(inet->sin_family, &inet->sin_addr.s_addr, address, sizeof(address));
             PyTuple_SetItem(entry, 1, PyString_FromString(address));
-            PyList_Append(interface, entry);
+            PyList_Append(ips, entry);
 
         } else if(inet->sin_family == AF_INET6) {
 
@@ -83,7 +86,7 @@ static PyObject* get_interfaces(PyObject* self) {
             inet = (struct sockaddr_in *) ifa->ifa_netmask;
             inet_ntop(inet->sin_family, &inet->sin_addr.s_addr, address6, sizeof(address6));
             PyTuple_SetItem(entry, 1, PyString_FromString(address6));
-            PyList_Append(interface, entry);
+            PyList_Append(ips, entry);
 
         }
 

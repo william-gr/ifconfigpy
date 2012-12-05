@@ -32,14 +32,14 @@ class FBSDInterfaces:
         from ifconfigpy.iface import Interface
 
         interfaces = {}
-        for ifname, ips in _freebsd.get_interfaces().items():
+        for ifname, data in _freebsd.get_interfaces().items():
 
             iface = interfaces.get(ifname, None)
             if not iface:
                 iface = Interface(ifname)
                 interfaces[ifname] = iface
 
-            for addr, netmask in ips:
+            for addr, netmask in data.get("ips", []):
                 if '.' in addr:
                     iface.append(Inet(addr, netmask, new=False))
                 else:
