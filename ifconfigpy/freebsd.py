@@ -92,3 +92,5 @@ class FBSDInterface:
                 raise ValueError("error")
 
             inet._modified = False
+        if self._flags:
+            _freebsd.iface_set_flags(self.name, self._flags)

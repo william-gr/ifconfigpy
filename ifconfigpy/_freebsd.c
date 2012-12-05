@@ -99,6 +99,37 @@ static PyObject* get_interfaces(PyObject* self) {
 }
 
 
+static PyObject* iface_set_flags(PyObject* self, PyObject* args) {
+
+    PyObject *obj, *attr;
+    struct ifreq ifreq;
+    int s, rv;
+    char *name;
+    unsigned int flags;
+
+    s = socket(PF_INET6, SOCK_DGRAM, 0);
+
+    if(!PyArg_ParseTuple(args, "sI", &name, &flags))
+        return NULL;
+
+    bzero(&ifreq, sizeof(struct ifreq));
+
+    strcpy((char *) &ifreq.ifr_name, name);
+
+    ifreq.ifr_flags = flags;
+
+    rv = ioctl(s, SIOCSIFFLAGS, &ifreq);
+    close(s);
+
+    if(rv) {
+        return PyBool_FromLong(0);
+    }
+
+    return PyBool_FromLong(1);
+
+}
+
+
 static PyObject* iface_inet_add(PyObject* self, PyObject* args) {
 
     PyObject *obj, *attr;
@@ -277,6 +308,7 @@ static PyObject* iface_inet6_del(PyObject* self, PyObject* args) {
 
 static PyMethodDef FreeBSDMethods[] = {
     {"get_interfaces", (PyCFunction) get_interfaces, METH_NOARGS, "Get interfaces"},
+    {"iface_set_flags", (PyCFunction) iface_set_flags, METH_VARARGS, "Set interface flags"},
     {"iface_inet_add", (PyCFunction) iface_inet_add, METH_VARARGS, "Add IPv4 to interface"},
     {"iface_inet_del", (PyCFunction) iface_inet_del, METH_VARARGS, "Delete IPv4 from interface"},
     {"iface_inet6_add", (PyCFunction) iface_inet6_add, METH_VARARGS, "Add IPv6 to interface"},
