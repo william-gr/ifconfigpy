@@ -54,7 +54,7 @@ static PyObject* get_interfaces(PyObject* self) {
     interfaces = PyDict_New();
     Py_INCREF(interfaces);
 
-    for(ifa=ifap;ifa!=NULL;ifa=ifa->ifa_next) {
+    for(ifa=ifap;ifa;ifa=ifa->ifa_next) {
 
         key = PyString_FromString(ifa->ifa_name);
         if(PyDict_Contains(interfaces, key)) {
@@ -65,6 +65,7 @@ static PyObject* get_interfaces(PyObject* self) {
             PyDict_SetItem(interfaces, key, interface);
             ips = PyList_New(0);
             PyDict_SetItem(interface, PyString_FromString("ips"), ips);
+            PyDict_SetItem(interface, PyString_FromString("flags"), PyInt_FromLong(ifa->ifa_flags));
         }
 
         inet = (struct sockaddr_in *) ifa->ifa_addr;
@@ -291,5 +292,7 @@ init_freebsd(void) {
     m = Py_InitModule("_freebsd", FreeBSDMethods);
     if (m == NULL)
         return;
+
+    PyModule_AddObject(m, "IFF_UP", PyInt_FromLong(IFF_UP));
 
 }

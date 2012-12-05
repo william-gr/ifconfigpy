@@ -39,6 +39,7 @@ class FBSDInterfaces:
                 iface = Interface(ifname)
                 interfaces[ifname] = iface
 
+            iface._flags = data.get("flags")
             for addr, netmask in data.get("ips", []):
                 if '.' in addr:
                     iface.append(Inet(addr, netmask, new=False))
@@ -49,6 +50,17 @@ class FBSDInterfaces:
 
 
 class FBSDInterface:
+
+    @property
+    def up(self):
+        if self._flags:
+            return bool(self._flags & _freebsd.IFF_UP)
+
+    @up.setter
+    def up(self, value):
+        if self._flags:
+            if value != self.up:
+                self._flags ^= _freebsd.IFF_UP
 
     def save(self):
         for inet in list(self._removed):

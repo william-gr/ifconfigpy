@@ -76,6 +76,7 @@ class Interface(object):
 
     def __init__(self, name, **kwargs):
         self.name = name
+        self._flags = None
         self._inets = []
         self._removed = []
 
@@ -98,6 +99,10 @@ class Interface(object):
         for inet in self:
             if inet.addr == addr:
                 return inet
+
+    @property
+    def up(self):
+        raise NotImplementedError
 
     def save(self):
         raise NotImplementedError
