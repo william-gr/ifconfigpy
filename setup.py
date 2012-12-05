@@ -9,10 +9,20 @@ try:
     from distutils.command.build_py import build_py_2to3 as build_py
 except ImportError:
     from distutils.command.build_py import build_py
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+
+from distutils.core import setup, Extension
+
+
+modules = []
+
+if os.uname()[0].lower().startswith('freebsd'):
+    modules.append(
+        Extension(
+            'ifconfigpy/_freebsd',
+            sources=['ifconfigpy/_freebsd.c'],
+        )
+    )
+print modules
 
 setup(
     name='ifconfigpy',
@@ -20,7 +30,7 @@ setup(
     url='http://bitbucket.org/williambr/ifconfigpy',
     license='BSD',
     author='William Grzybowski',
-    author_email='william8@gmail.com',
+    author_email='william88@gmail.com',
     description=('ifconfigpy is a python library to manipulate interfaces '
                  'like ifconfig'),
     long_description=open(
@@ -30,7 +40,6 @@ setup(
     packages=('ifconfigpy', ),
     #package_data={ 'ifconfigpy': ['ifconfigpy.rst'] },
     platforms='any',
-    install_requires=[],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
@@ -39,4 +48,5 @@ setup(
         'Programming Language :: Python',
     ],
     cmdclass={'build_py': build_py},
+    ext_modules=modules,
 )
