@@ -12,6 +12,7 @@ except ImportError:
 
 from distutils.core import setup, Extension
 
+from ifconfigpy import get_version
 
 modules = []
 
@@ -22,11 +23,10 @@ if os.uname()[0].lower().startswith('freebsd'):
             sources=['ifconfigpy/_freebsd.c'],
         )
     )
-print modules
 
 setup(
     name='ifconfigpy',
-    version='0.1alpha',
+    version=get_version(),
     url='http://bitbucket.org/williambr/ifconfigpy',
     license='BSD',
     author='William Grzybowski',

@@ -21,3 +21,34 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
+
+VERSION = (0, 0, 1, 'alpha', 0)
+
+def get_version(version=None):
+    """Derives a PEP386-compliant version number from VERSION."""
+    if version is None:
+        version = VERSION
+    assert len(version) == 5
+    assert version[3] in ('alpha', 'beta', 'rc', 'final')
+
+    # Now build the two parts of the version number:
+    # main = X.Y[.Z]
+    # sub = .devN - for pre-alpha releases
+    #     | {a|b|c}N - for alpha, beta and rc releases
+
+    parts = 2 if version[2] == 0 else 3
+    main = '.'.join(str(x) for x in version[:parts])
+
+    sub = ''
+    if version[3] == 'alpha' and version[4] == 0:
+        # At the toplevel, this would cause an import loop.
+        #revision = get_svn_revision()
+        revision = 'r11'
+        if revision != 'unknown':
+            sub = '.dev%s' % revision
+
+    elif version[3] != 'final':
+        mapping = {'alpha': 'a', 'beta': 'b', 'rc': 'c'}
+        sub = mapping[version[3]] + str(version[4])
+
+    return main + sub
