@@ -39,6 +39,9 @@
 
 #include <netinet6/nd6.h>       /* Define ND6_INFINITE_LIFETIME */
 
+#include <net/if_dl.h>
+#include <net/ethernet.h>
+
 #include <Python.h>
 
 static PyObject* get_interfaces(PyObject* self) {
@@ -119,6 +122,50 @@ static PyObject* iface_set_flags(PyObject* self, PyObject* args) {
     ifreq.ifr_flags = flags;
 
     rv = ioctl(s, SIOCSIFFLAGS, &ifreq);
+    close(s);
+
+    if(rv) {
+        return PyBool_FromLong(0);
+    }
+
+    return PyBool_FromLong(1);
+
+}
+
+
+static PyObject* iface_set_lladdr(PyObject* self, PyObject* args) {
+
+    PyObject *obj, *attr;
+    struct ifreq ifreq;
+    struct sockaddr *sa;
+    int s, rv;
+    struct sockaddr_dl sdl;
+    char *name, *lladdr, *temp;
+    unsigned int flags;
+
+    sa = &ifreq.ifr_addr;
+
+    s = socket(AF_LOCAL, SOCK_DGRAM, 0);
+
+    if(!PyArg_ParseTuple(args, "ss", &name, &lladdr))
+        return NULL;
+
+    bzero(&ifreq, sizeof(struct ifreq));
+
+    strcpy((char *) &ifreq.ifr_name, name);
+
+    temp = malloc(strlen(lladdr) + 2);
+    temp[0] = ':';
+    strcpy(temp + 1, lladdr);
+    sdl.sdl_len = sizeof(sdl);
+
+    link_addr(temp, &sdl);
+    free(temp);
+    sa->sa_family = AF_LINK;
+    sa->sa_len = sdl.sdl_alen;
+    bcopy(LLADDR(&sdl), sa->sa_data, sdl.sdl_alen);
+
+    rv = ioctl(s, SIOCSIFLLADDR, &ifreq);
     close(s);
 
     if(rv) {
@@ -309,6 +356,7 @@ static PyObject* iface_inet6_del(PyObject* self, PyObject* args) {
 static PyMethodDef FreeBSDMethods[] = {
     {"get_interfaces", (PyCFunction) get_interfaces, METH_NOARGS, "Get interfaces"},
     {"iface_set_flags", (PyCFunction) iface_set_flags, METH_VARARGS, "Set interface flags"},
+    {"iface_set_lladdr", (PyCFunction) iface_set_lladdr, METH_VARARGS, "Set linklevel address"},
     {"iface_inet_add", (PyCFunction) iface_inet_add, METH_VARARGS, "Add IPv4 to interface"},
     {"iface_inet_del", (PyCFunction) iface_inet_del, METH_VARARGS, "Delete IPv4 from interface"},
     {"iface_inet6_add", (PyCFunction) iface_inet6_add, METH_VARARGS, "Add IPv6 to interface"},
