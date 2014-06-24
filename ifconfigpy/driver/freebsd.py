@@ -22,72 +22,63 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-import logging
-import os
-
-from .driver import load
-
-driver = load()
-log = logging.getLogger('iface')
+from ifconfigpy.driver import _freebsd
+from ifconfigpy import base
 
 
-class MetaInterfaces(object):
+class Interfaces(base.InterfacesBase):
 
-    def __new__(cls, name, bases, attrs):
-        if driver:
-            new_class = driver.Interfaces
-        else:
-            new_class = type(name, bases, attrs)
-        return new_class
+    def get_interfaces(self):
 
-class Interfaces(object):
+        interfaces = {}
+        for ifname in _freebsd.get_interfaces():
+            iface = Interface(ifname)
+            interfaces[ifname] = iface
 
-    __metaclass__ = MetaInterfaces
+        return interfaces
 
 
-class MetaInterface(object):
+class Interface(base.InterfaceBase):
 
-    def __new__(cls, name, bases, attrs):
-        if driver:
-            new_class = driver.Interface
-        else:
-            new_class = cls
-        return new_class
+    @property
+    def _flags(self):
+        return _freebsd.iface_get_flags(self.name)
 
+    @_flags.setter
+    def _flags(self, value):
+        assert _freebsd.iface_set_flags(self.name, value) is True
 
-class Interface(object):
+    @property
+    def mtu(self):
+        return _freebsd.iface_get_mtu(self.name)
 
-    __metaclass__ = MetaInterface
-
-    def __init__(self, name, **kwargs):
-        self.name = name
-        self._flags = None
-        self._inets = []
-        self._removed = []
-
-    def __repr__(self):
-        return '<Interface(%s)>' % self.name
-
-    def __iter__(self):
-        for inet in list(self._inets):
-            yield inet
-
-    def append(self, inet):
-        inet.interface = self
-        self._inets.append(inet)
-
-    def remove(self, inet):
-        self._inets.remove(inet)
-        self._removed.append(inet)
-
-    def find_byaddress(self, addr):
-        for inet in self:
-            if inet.addr == addr:
-                return inet
+    @property
+    def promiscuous(self):
+        flags = self._flags
+        if flags:
+            return bool(flags & _freebsd.IFF_PROMISC)
 
     @property
     def up(self):
-        raise NotImplementedError
+        if self._flags:
+            return bool(self._flags & _freebsd.IFF_UP)
 
-    def save(self):
-        raise NotImplementedError
+    @up.setter
+    def up(self, value):
+        flags = self._flags
+        if flags:
+            if value != self.up:
+                self._flags |= _freebsd.IFF_UP
+
+    @property
+    def inet(self):
+        inets = []
+        for inet in _freebsd.iface_inet_get(self.name):
+            inets.append(
+                base.Inet(self, inet['address'], inet['netmask'])
+            )
+        return inets
+
+    @inet.setter
+    def inet(self, value):
+        inet = self.inet

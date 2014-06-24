@@ -12,8 +12,8 @@ modules = []
 if os.uname()[0].lower().startswith('freebsd'):
     modules.append(
         Extension(
-            'ifconfigpy/_freebsd',
-            sources=['ifconfigpy/_freebsd.c'],
+            'ifconfigpy/driver/_freebsd',
+            sources=['ifconfigpy/driver/_freebsd.c'],
             extra_compile_args=["-Wall"],
         )
     )
@@ -31,7 +31,7 @@ setup(
         os.path.join(os.path.dirname(__file__),
         'README')).read(),
     keywords='ifconfig',
-    packages=('ifconfigpy', ),
+    packages=('ifconfigpy', 'ifconfigpy.driver'),
     #package_data={ 'ifconfigpy': ['ifconfigpy.rst'] },
     platforms='any',
     classifiers=[
