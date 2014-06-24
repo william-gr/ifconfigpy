@@ -21,18 +21,17 @@ if os.uname()[0].lower().startswith('freebsd'):
 setup(
     name='ifconfigpy',
     version=get_version(),
-    url='http://bitbucket.org/williambr/ifconfigpy',
+    url='https://github.com/williambr/ifconfigpy',
     license='BSD',
     author='William Grzybowski',
-    author_email='william88@gmail.com',
+    author_email='wg@FreeBSD.org',
     description=('ifconfigpy is a python library to manipulate interfaces '
-                 'like ifconfig'),
+                 'like ifconfig(8)'),
     long_description=open(
         os.path.join(os.path.dirname(__file__),
         'README')).read(),
     keywords='ifconfig',
     packages=('ifconfigpy', 'ifconfigpy.driver'),
-    #package_data={ 'ifconfigpy': ['ifconfigpy.rst'] },
     platforms='any',
     classifiers=[
         'Development Status :: 1 - Planning',
